@@ -18,7 +18,8 @@
 */
 function ccFilter(input){
 	var regex = /[A-Z]/g;
-	
+	//TODO: convert to hypenated ~30 min
+	return input;
 }
 
 /**
@@ -89,21 +90,7 @@ function parseJsonHelper(obj){
 */
 function parseJson(json, tagName){
 	var parent = tagName || "xml";
-	var xml = "<?xml version='1.0' encoding='UTF-8'?>";
+	var xml = '';
 	return xml += "<"+parent+">"+parseJsonHelper(json)+"</"+parent+">";
 }
-
-var test = {
-  "attribution": {
-	"_value":"500",
-	"share": {
-		"id": "s148028014"
-	}
-  },
-  "visibility": {
-	"code": "anyone"
-  }
-}
-
-console.log(parseJson(test, "share"));
 module.export = parseJson;
