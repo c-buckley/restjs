@@ -1,5 +1,51 @@
 "use strict";
+/**
+*	json2xml
+*
+*	converts JSON object to XML string
+*	Warning: operates in O(n^2)
+*	
+*	keys that start with _ will be added to tag attributes
+*	keys written in camelCase will be hyphenated i.e camel-case
+*/
 
+/**
+*	ccFilter
+*
+*	converts camelCase to hyphenated i.e camel-case
+*	@param	{string}	input	string to be converted
+*	@return	{string}				hyphenated string
+*/
+function ccFilter(input){
+	var regex = /[A-Z]/g;
+	
+}
+
+/**
+*	attScan
+*
+*	scans object for attributes
+*	@param	{object}	obj		object to be scaned
+*	@param	{string}	ent		name of object
+*	@return	{string}				xml open tag
+*/	
+function attScan(obj, ent){
+	var returnString = "<"+ccFilter(ent)
+	var att;
+	
+	for(att in obj){
+		//type check
+		if(obj.hasOwnProperty(att)){
+			if(att.charAt(0) === "_"){
+				//append to open tag;
+				returnString += " "+att.slice(1)+"=\""+obj[att]+"\"";
+			}
+		}
+	}
+	
+	returnString += ">";
+	return returnString;
+}
 /**
 *	parseJSONHelper
 *
@@ -13,17 +59,18 @@ function parseJsonHelper(obj){
 		if(typeof obj !== 'object'){
 			//proper value
 			xml = obj;
-		}else if(obj instanceof Array){
-			var stop = obj.length, i;
-			for(i = 0; i < stop; i += 1){
-				xml += "<"+i+">"+parseJsonHelper(obj[i])+"</"+i+">"
-			}
 		}else{
-			//object
 			var ent;
+			//object
 			for(ent in obj){
 				if(obj.hasOwnProperty(ent)){
-					xml += "<"+ent+">"+parseJsonHelper(obj[ent])+"</"+ent+">"
+					console.log(ent);
+					var open = attScan(obj[ent], ent);
+					var close = "</"+ent +">";
+					//filter att format
+					if(ent.charAt(0) !== "_"){
+						xml += open+parseJsonHelper(obj[ent])+close;
+					}
 				}
 			}
 		}
@@ -34,12 +81,29 @@ function parseJsonHelper(obj){
 /**
 *	parseJSON
 *
+*	Operates in O(n^2)
 *	parses JSON objecct
-*	@param	{object} jsonObj	JSON object to be parsed
+*	@param	{object}	jsonObj	JSON object to be parsed
+*	@param	{string}	tagName	name of xml parent node, xml if undefined
 *	@return	{string}					XML output
 */
-function parseJson(json){
+function parseJson(json, tagName){
+	var parent = tagName || "xml";
 	var xml = "<?xml version='1.0' encoding='UTF-8'?>";
-	return xml += parseJsonHelper(json);
+	return xml += "<"+parent+">"+parseJsonHelper(json)+"</"+parent+">";
 }
-modules.export = parseJson;
+
+var test = {
+  "attribution": {
+	"_value":"500",
+	"share": {
+		"id": "s148028014"
+	}
+  },
+  "visibility": {
+	"code": "anyone"
+  }
+}
+
+console.log(parseJson(test, "share"));
+module.export = parseJson;
