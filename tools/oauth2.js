@@ -1,5 +1,5 @@
 "use strict";
-var rest = require('./rest.js');
+var rest = require('../index.js').Rest;
 var querystring = require('querystring'); 
 
 /**
@@ -20,12 +20,17 @@ function authCall(config, opts){
 	body.client_secret = config.consumer_secret;
 	body.client_id = config.consumer_key;
 	body.refresh_token = config.refresh_token;
+	//body.hash = config.hash
+	body.redirect_uri = config.redirect_uri
 	body = querystring.stringify(body);
 	
+	if(head.hostname == api.smartsheet.com){
+		delete head.headers.Authorization
+	}
 	head.method = 'POST';
 	head.headers['Content-Type'] = 'application/x-www-form-urlencoded';
 	head.path = config.refresh_path;
-	head.headers.Accept = "application/json";
+	//head.headers.Accept = "application/json";
 	head.headers['Content-length'] = body.length;
 	
 	return {body: body, head: head};
@@ -53,22 +58,22 @@ function cloneObject(obj) {
     return temp;
 }
 
+//TODO: make refresh token only refresh token and remove call side effect 
 /**
 *	refresh token
 *	will modifiy auth
 *	@param	{object}		auth		auth information
-*	MUST BE
-*	{
-*		service:	{string}	name of service,
-*		token:		{token}	auth information,
-*		expires:	{number}	token experation unix time
-*	}
+*	@param	{object}		body		body of request
+*	@param	{object}		oldOpts		service header options 
+*	@param	{number}		currentTime	Optional expiration time
 *	@param	{function}	callback	function(newToken)
-*	@param	{opbject}		oldOpts		service header options 
 */
 function refreshToken(auth, oldOpts, body, currentTime, callback){
 	var opts = cloneObject(oldOpts);
 	var info = authCall(auth, opts);
+	console.log('refreshing');
+	console.log(info);
+	console.log(querystring.parse(info.body));
 	rest(info.head, info.body, function(err, res){
 		if(err){
 			console.log("[auth][refreshToken]"+ err);
@@ -93,7 +98,6 @@ function refreshToken(auth, oldOpts, body, currentTime, callback){
 				if(newToken.refresh_token){
 					auth.refresh_token = newToken.refresh_token;
 				}
-				
 				rest(oldOpts, body, callback);
 			}
 		}
@@ -135,3 +139,4 @@ function attemptRequest(auth, oldOpts, body, callback){
 }
 
 exports.call = attemptRequest;
+exports.refresh = refreshToken;
