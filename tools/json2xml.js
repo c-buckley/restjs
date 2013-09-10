@@ -1,3 +1,4 @@
+(function(){
 "use strict";
 /**
 *	json2xml
@@ -17,7 +18,10 @@
 *	@return	{string}				hyphenated string
 */
 function ccFilter(input){
-	var regex = /[A-Z]/g;
+	var regex = /([A-Z])/g;
+	input.replace(regex, function(string, match){
+		return "-"+match.toLowerCase();
+	});
 	//TODO: convert to hypenated ~30 min
 	return input;
 }
@@ -31,7 +35,7 @@ function ccFilter(input){
 *	@return	{string}				xml open tag
 */	
 function attScan(obj, ent){
-	var returnString = "<"+ccFilter(ent)
+	var returnString = "<"+ccFilter(ent);
 	var att;
 	
 	for(att in obj){
@@ -58,15 +62,15 @@ function parseJsonHelper(obj){
 	var xml = '';
 	if(obj){//check null
 		if(typeof obj !== 'object'){
-			//proper value
+			//primitive
 			xml = obj;
 		}else{
 			var ent;
 			//object
 			for(ent in obj){
-				if(obj.hasOwnProperty(ent)){
-					console.log(ent);
-					var open = attScan(obj[ent], ent);
+				if(typeof obj[ent] !== "function"){ //avoid objects in the prototype
+					//TODO: array handling so that att name is not a number
+					var open = attScan(obj[ent], ent); 
 					var close = "</"+ent +">";
 					//filter att format
 					if(ent.charAt(0) !== "_"){
@@ -81,16 +85,22 @@ function parseJsonHelper(obj){
 
 /**
 *	parseJSON
-*
-*	Operates in O(n^2)
+*	Warning
+*		- blocking operation
 *	parses JSON objecct
-*	@param	{object}	jsonObj	JSON object to be parsed
-*	@param	{string}	tagName	name of xml parent node, xml if undefined
+*	@param	{object}	jsonObj		JSON object to be parsed
+*	@param	{boolean}	hyp 		if tag names should be converted to camle case
+*	@param	{string|boolean}	tagName		name of xml parent node, xml if undefined, no parent node if false
 *	@return	{string}					XML output
 */
 function parseJson(json, tagName){
-	var parent = tagName || "xml";
 	var xml = '';
+	if(tagName === false){//boolean false
+		//no parent node
+		return parseJsonHelper(json); 
+	}
+	parent = tagName || "xml";
 	return xml += "<"+parent+">"+parseJsonHelper(json)+"</"+parent+">";
 }
 module.export = parseJson;
+})();
