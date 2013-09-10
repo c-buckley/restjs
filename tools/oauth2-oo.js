@@ -25,6 +25,20 @@ function Oauth2(config) {
 	self.state = 0;
 	self.lastCheck = self.state;
 }
+
+Oauth2.extend = function extend(props) {
+	var subclass = function() {};
+
+	subclass.extend = extend;
+	subclass._super = this.prototype;
+	subclass.prototype = new this();
+	for (var prop in props) {
+		subclass.prototype[prop];
+	}
+
+	return subclass;
+}
+
 Oauth2.prototype.refreshCall = function authCall(config) {
 	config = config || this.config;
 	var body = {};
@@ -156,4 +170,6 @@ Oauth2.prototype.call = function attemptRequest(options, body, callback) {
 	}
 };
 
-module.exports = Oauth2;
+exports.Adapter = function(config) {
+	return new Oauth2(config);
+}
