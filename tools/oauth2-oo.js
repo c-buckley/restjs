@@ -35,6 +35,8 @@ Oauth2.prototype.refreshCall = function authCall(config) {
 	body.client_id = config.consumer_key;
 	body.refresh_token = config.refresh_token;
 	body = querystring.stringify(body);
+
+	head.hostname =  config.hostname || head.hostname;
 	head.method = 'POST';
 	head.headers['Content-Type'] = 'application/x-www-form-urlencoded';
 	head.path = config.refresh_path;
@@ -62,18 +64,19 @@ Oauth2.prototype.refreshToken = function refreshToken(auth, done) {
 		} else {
 			var newToken;
 			try {
-				newToken = JSON.parse(res.message);
+				newToken = JSON.parse(res.body);
 			} catch (e) {
+				console.log('parse error');
 				done(e);
 			}
-			if (Math.floor(newToken.statusCode / 100) !== 2) {
-				done(newToken.body);
+			if (Math.floor(res.statusCode / 100) !== 2) {
+				done(newToken);
 			} else {
 				self.state += 1;
 				auth.access_token = newToken.access_token;
 				if (newToken.expires_in || newToken.expires) {
 					var expires = newToken.expires_in || newToken.expires;
-					var time = new Date().getTime();
+					var time = Date.now();
 					expires = (expires * 1000) + time;
 					auth.expires = expires;
 				}
@@ -84,6 +87,8 @@ Oauth2.prototype.refreshToken = function refreshToken(auth, done) {
 			}
 		}
 	}
+	console.log(info.head);
+	console.log(info.body);
 	rest.request(info.head, info.body, tokenBack);
 };
 Oauth2.prototype.hasChanged = function () {
@@ -140,6 +145,7 @@ Oauth2.prototype.call = function attemptRequest(options, body, callback) {
 			if (err) {
 				callback(err);
 			} else {
+				console.log(response.statusCode);
 				if (response.statusCode === 401) {
 					console.log(response.body);
 					self.refreshToken(self.config, function (err, newAuth) {
