@@ -83,9 +83,10 @@ function refreshToken(auth, oldOpts, body, currentTime, callback){
 			callback(err);
 		}else{
 			var newToken = JSON.parse(res.message);
-			if(newToken.errorCode){//handle errors
+			if(res.statusCode === 401){//handle errors
 				callback(newToken);
 			}else{//success, package data
+				console.log("success");
 				auth.access_token = newToken.access_token; // only guarenteed response
 				
 				//constructs new date in UNIX time bassed off current date and expires_in
@@ -99,6 +100,8 @@ function refreshToken(auth, oldOpts, body, currentTime, callback){
 				if(newToken.refresh_token){
 					auth.refresh_token = newToken.refresh_token;
 				}
+
+				oldOpts.headers.Authorization = "Bearer "+auth.access_token;
 				rest.request(oldOpts, body, callback);
 			}
 		}
