@@ -6,6 +6,10 @@
   "author": "Kevin McTigue",
   "private": true,
   "main": "index",
+  "dependencies": {
+    "async": "0.2.7",
+    "xml2js": "*"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/azuqua/restjs"
