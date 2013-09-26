@@ -5,7 +5,7 @@ var findType = /(\w+\/?\w+)/;
 //Make JSON.parse async
 function parseJSON(str, callback) {
   try {
-    var parsed = parserLib(str);
+    var parsed = JSON.parse(str);
   } catch (e) {
     return callback(e);
   }
@@ -23,7 +23,7 @@ var supportedParsers = {
 
 module.exports = function parser(res, next) {
   var matchedContentType = (res.headers['content-type'] || '').match(findType),
-      parserLib, parsedBody;
+      parserLib;
 
   if (!(matchedContentType && (parserLib = supportedParsers[matchedContentType[0]]))) return next();
 
