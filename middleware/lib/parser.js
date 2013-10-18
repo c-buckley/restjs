@@ -1,6 +1,7 @@
 "use strict";
 
-var findType = /(\w+\/?\w+)/;
+var xml2js = require('xml2js'),
+    findType = /(.+\/[^;]+)/;
 
 //Make JSON.parse async
 function parseJSON(str, callback) {
@@ -17,8 +18,9 @@ var supportedParsers = {
   'application/json': parseJSON,
   'text/json': parseJSON,
   'text/x-json': parseJSON,
-  'application/xml': require('xml2js').parseString,
-  'text/xml': require('xml2js').parseString
+  'application/xml': xml2js.parseString,
+  'text/xml': xml2js.parseString,
+  'application/atom+xml': xml2js.parseString
 };
 
 module.exports = function parser(res, next) {
@@ -29,6 +31,6 @@ module.exports = function parser(res, next) {
 
   parserLib(res.body, function(err, parsed) {
     res.parsedBody = parsed;
-    next();
+    next(err); //If there's an error, it will be passed to the callback
   });
 };
