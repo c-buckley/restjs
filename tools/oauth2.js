@@ -1,5 +1,5 @@
 "use strict";
-var rest = require('../index.js').Rest;
+var rest = require('../index.js').Rest();
 var querystring = require('querystring'); 
 
 /**
@@ -11,22 +11,28 @@ var querystring = require('querystring');
 *	@param	{object}	opts		call options
 */
 function authCall(config, opts){
-	var body = {};
+
+	var body = {
+		'client_id': config.consumer_key,
+		'client_secret': config.consumer_secret,
+		'grant_type': 'refresh_token',
+		'redirect_uri': config.redirect_uri,
+		'refresh_token': config.refresh_token
+    };
+    
 	var head = opts;
 	
 	
-	body = config; // for special config cases
-	body.grant_type = "refresh_token";
-	body.client_secret = config.consumer_secret;
-	body.client_id = config.consumer_key;
-	body.refresh_token = config.refresh_token;
+	//body = config; // for special config cases
 	//body.hash = config.hash
-	body.redirect_uri = config.redirect_uri
+	if(config.redirect_uri){
+		body.redirect_uri = config.redirect_uri
+	}
 	body = querystring.stringify(body);
 	
-	if(head.hostname == api.smartsheet.com){
-		delete head.headers.Authorization
-	}
+	delete head.headers.Authorization
+	head.hostname = config.hostname || head.hostname
+
 	head.method = 'POST';
 	head.headers['Content-Type'] = 'application/x-www-form-urlencoded';
 	head.path = config.refresh_path;
@@ -71,21 +77,17 @@ function cloneObject(obj) {
 function refreshToken(auth, oldOpts, body, currentTime, callback){
 	var opts = cloneObject(oldOpts);
 	var info = authCall(auth, opts);
-	console.log('refreshing');
-	console.log(info);
-	console.log(querystring.parse(info.body));
-	rest(info.head, info.body, function(err, res){
+	rest.request(info.head, info.body, function(err, res){
 		if(err){
 			console.log("[auth][refreshToken]"+ err);
 			callback(err);
 		}else{
 			var newToken = JSON.parse(res.message);
-			if(newToken.errorCode){//handle errors
+			if(res.statusCode === 401){//handle errors
 				callback(newToken);
 			}else{//success, package data
-				console.log('refreshing');
+				console.log("success");
 				auth.access_token = newToken.access_token; // only guarenteed response
-				
 				
 				//constructs new date in UNIX time bassed off current date and expires_in
 				if(currentTime){
@@ -98,7 +100,9 @@ function refreshToken(auth, oldOpts, body, currentTime, callback){
 				if(newToken.refresh_token){
 					auth.refresh_token = newToken.refresh_token;
 				}
-				rest(oldOpts, body, callback);
+
+				oldOpts.headers.Authorization = "Bearer "+auth.access_token;
+				rest.request(oldOpts, body, callback);
 			}
 		}
 	});
@@ -123,12 +127,11 @@ function attemptRequest(auth, oldOpts, body, callback){
 		console.log('old token');
 		refreshToken(auth, oldOpts, body, currentTime, callback);
 	}else{//attempt request
-		rest(oldOpts, body, function(err, response){
+		rest.request(oldOpts, body, function(err, response){
 			if(err){
 				callback(err);
 			}else{
 				if(response.statusCode == 401){ //auth error
-					console.log(response.body);
 					refreshToken(auth, oldOpts, body, null, callback);
 				}else{
 					callback(null, response);
